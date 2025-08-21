@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Users extends Model
 {
@@ -36,5 +37,29 @@ class Users extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'departmentId');
+    }
+
+    /**
+     * Get the staff resume for the user.
+     */
+    public function staffResume(): HasOne
+    {
+        return $this->hasOne(StaffResume::class);
+    }
+
+    /**
+     * Get the staff position salary for the user.
+     */
+    public function staffPositionSalary(): HasOne
+    {
+        return $this->hasOne(StaffPositionSalary::class);
+    }
+
+    /**
+     * Get the staff education for the user.
+     */
+    public function staffEducation(): HasOne
+    {
+        return $this->hasOne(StaffEducation::class);
     }
 }

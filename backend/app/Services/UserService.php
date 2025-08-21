@@ -8,6 +8,9 @@ use App\Models\RolePermission;
 use App\Models\SalaryHistory;
 use App\Models\Store;
 use App\Models\Subscription;
+use App\Services\StaffResumeService;
+use App\Services\StaffPositionSalaryService;
+use App\Services\StaffEducationService;
 use Carbon\Carbon;
 use Exception;
 use App\Models\Users;
@@ -19,6 +22,20 @@ use App\Traits\ErrorTrait;
 class UserService
 {
     use ErrorTrait;
+
+    protected StaffResumeService $staffResumeService;
+    protected StaffPositionSalaryService $staffPositionSalaryService;
+    protected StaffEducationService $staffEducationService;
+
+    public function __construct(
+        StaffResumeService $staffResumeService,
+        StaffPositionSalaryService $staffPositionSalaryService,
+        StaffEducationService $staffEducationService
+    ) {
+        $this->staffResumeService = $staffResumeService;
+        $this->staffPositionSalaryService = $staffPositionSalaryService;
+        $this->staffEducationService = $staffEducationService;
+    }
 
     public function UserAuthenticate($request): JsonResponse
     {
@@ -129,6 +146,21 @@ class UserService
                 'departmentId' => $userData['departmentId'] ?? null,
                 'status' => $userData['status'] ?? 'active',
             ]);
+
+            // Tạo thông tin sơ yếu lý lịch nếu có
+            if (isset($userData['staffResumes']) && !empty($userData['staffResumes'])) {
+                $this->staffResumeService->createStaffResume($createUser->id, $userData['staffResumes']);
+            }
+
+            // Tạo thông tin chức danh và lương nếu có
+            if (isset($userData['staffPositionSalaries']) && !empty($userData['staffPositionSalaries'])) {
+                $this->staffPositionSalaryService->createStaffPositionSalary($createUser->id, $userData['staffPositionSalaries']);
+            }
+
+            // Tạo thông tin giáo dục nếu có
+            if (isset($userData['staffEducations']) && !empty($userData['staffEducations'])) {
+                $this->staffEducationService->createStaffEducation($createUser->id, $userData['staffEducations']);
+            }
 
             unset($createUser['password']);
             DB::commit();
