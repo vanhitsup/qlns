@@ -57,8 +57,8 @@ class UsersController extends Controller
                 'lastName' => 'nullable|string',
                 'phone' => 'nullable|string',
                 'nationalId' => 'nullable|string',
-                'roleId' => 'nullable|integer|exists:roles,id',
-                'departmentId' => 'nullable|integer|exists:departments,id',
+                'roleId' => 'nullable|integer|exists:role,id',
+                'departmentId' => 'nullable|integer|exists:department,id',
                 'status' => 'nullable|string|in:active,inactive',
                 
                 // Validation cho staffResumes
