@@ -146,7 +146,6 @@ class UserService
                 'departmentId' => $userData['departmentId'] ?? null,
                 'status' => $userData['status'] ?? 'active',
             ]);
-
             // Tạo thông tin sơ yếu lý lịch nếu có
             if (isset($userData['staffResumes']) && !empty($userData['staffResumes'])) {
                 $this->staffResumeService->createStaffResume($createUser->id, $userData['staffResumes']);

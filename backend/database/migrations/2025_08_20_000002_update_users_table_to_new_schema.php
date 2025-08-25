@@ -69,7 +69,7 @@ return new class extends Migration
             // Remove deprecated columns if present
             foreach ([
                 'refreshToken','employeeId','street','city','state','zipCode','country','bloodGroup','image',
-                'commissionType','commissionValue','employmentStatusId','shiftId','joinDate','leaveDate','leavePolicyId','weeklyHolidayId','isLogin','salaryMode'
+                'commissionType','commissionValue','employmentStatusId','shiftId','leaveDate','leavePolicyId','weeklyHolidayId','isLogin','salaryMode'
             ] as $col) {
                 if (Schema::hasColumn('users', $col)) {
                     $table->dropColumn($col);
@@ -100,4 +100,4 @@ return new class extends Migration
         });
         // Note: Column type/nullable changes are not reverted here.
     }
-}; 
+};

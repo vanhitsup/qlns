@@ -60,7 +60,7 @@ class UsersController extends Controller
                 'roleId' => 'nullable|integer|exists:role,id',
                 'departmentId' => 'nullable|integer|exists:department,id',
                 'status' => 'nullable|string|in:active,inactive',
-                
+
                 // Validation cho staffResumes
                 'staffResumes' => 'nullable',
                 'staffResumes.fullNameBirth' => 'nullable|string',
@@ -82,7 +82,7 @@ class UsersController extends Controller
                 'staffResumes.issuePlace' => 'nullable|string',
                 'staffResumes.bankAccountNumber' => 'nullable|string',
                 'staffResumes.bankName' => 'nullable|string',
-                'staffResumes.healthCertificate' => 'nullable|string',
+                'staffResumes.healthCertificate' => 'nullable',
                 'staffResumes.resume' => 'nullable|string',
                 'staffResumes.height' => 'nullable|integer|min:0',
                 'staffResumes.weight' => 'nullable|integer|min:0',
@@ -109,7 +109,7 @@ class UsersController extends Controller
                 'staffResumes.retirementDate' => 'nullable|date',
                 'staffResumes.staffCode' => 'nullable|string',
                 'staffResumes.bloodGroup' => 'nullable|string|in:A+,A-,B+,B-,O+,O-,AB+,AB-',
-                
+
                 // Validation cho staffPositionSalaries
                 'staffPositionSalaries' => 'nullable',
                 'staffPositionSalaries.positionTitle' => 'nullable|string',
@@ -140,7 +140,7 @@ class UsersController extends Controller
                 'staffPositionSalaries.salaryAmount' => 'nullable|string',
                 'staffPositionSalaries.salaryComment' => 'nullable|string',
                 'staffPositionSalaries.additionalIncome' => 'nullable|string',
-                
+
                 // Validation cho staffEducations
                 'staffEducations' => 'nullable',
                 'staffEducations.academicTitle' => 'nullable|string',

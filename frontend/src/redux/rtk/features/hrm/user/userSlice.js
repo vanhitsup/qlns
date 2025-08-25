@@ -16,6 +16,7 @@ const initialState = {
 };
 
 export const addStaff = createAsyncThunk("user/addStaff", async (values) => {
+  console.log(values);
   try {
     const { data } = await axios({
       method: "post",

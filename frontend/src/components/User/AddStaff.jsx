@@ -89,16 +89,201 @@ const AddStaff = () => {
         onChange={onChange}
         modules={modules}
         formats={formats}
-        style={{ height: height - 42 }} // Trừ đi chiều cao toolbar
+        style={{ height: height - 42 }} 
       />
     );
   };
 
-  // ✅ Better error handling
+  // ✅ Build payload in required nested JSON shape
   const onFinish = async (values) => {
     setLoader(true);
+
+    // helper to format DatePicker values
+    const fmt = (d) => (d && typeof d?.format === "function" ? d.format("YYYY-MM-DD") : d ?? null);
+
+    // Collect fields for nested groups
+    const resumeKeys = [
+      "fullNameBirth",
+      "gender",
+      "otherNames",
+      "birthDate",
+      "birthProvince",
+      "birthDistrict",
+      "birthWard",
+      "hometownProvince",
+      "hometownDistrict",
+      "hometownWard",
+      "permanentAddress",
+      "nationality",
+      "ethnicity",
+      "religion",
+      "personalId",
+      "issueDate",
+      "issuePlace",
+      "bankAccountNumber",
+      "bankName",
+      "healthCertificate",
+      "resume",
+      "height",
+      "weight",
+      "stateTitle",
+      "familyBackground",
+      "previousOccupation",
+      "joinPartyDate",
+      "joinOrganizationDate",
+      "joinArmyDate",
+      "leaveArmyDate",
+      "highestRank",
+      "policyObject",
+      "educationLevelGeneral",
+      "workHistory",
+      "workUnit",
+      "positionTitle",
+      "firstRecruitmentDate",
+      "currentAgencyJoinDate",
+      "arrestHistory",
+      "organizationRelations",
+      "familyRelations",
+      "familyEconomy",
+      "leaveDate",
+      "retirementDate",
+      "staffCode",
+      "bloodGroup",
+    ];
+
+    const positionSalaryKeys = [
+      "positionTitle",
+      "positionCode",
+      "appointmentStartDate",
+      "appointmentEndDate",
+      "reappointmentDate",
+      "positionAllocation",
+      "concurrentPosition",
+      "currentPartyPosition",
+      "alternatePartyPosition",
+      "workPosition",
+      "mainAssignedJob",
+      "specializedField",
+      "longestJob",
+      "positionSalary",
+      "salaryLevel",
+      "salaryCoefficient",
+      "salaryStartDate",
+      "salaryPercentage",
+      "seniorityAllowance",
+      "pctnvkDate",
+      "positionAllowance",
+      "additionalAllowance",
+      "otherAllowance",
+      "jobPosition",
+      "jobCode",
+      "salaryAmount",
+      "salaryComment",
+      "additionalIncome",
+    ];
+
+    const educationKeys = [
+      "academicTitle",
+      "degree",
+      "issuingOrganization",
+      "educationLevel",
+      "attachedFile",
+      "politicalTheory",
+      "specialized",
+      "trainingInstitution",
+      "trainingSpecialization",
+      "trainingForm",
+      "educationDegree",
+      "educationStartDate",
+      "educationEndDate",
+      "trainingContent",
+      "managementTrainingInstitution",
+      "managementTrainingStartDate",
+      "managementTrainingEndDate",
+      "securityDefenseTraining",
+      "securityDefenseInstitution",
+      "securityDefenseCertificate",
+      "securityDefenseStartDate",
+      "securityDefenseEndDate",
+      "itSkills",
+      "itTrainingInstitution",
+      "itCertificate",
+      "itTrainingStartDate",
+      "itTrainingEndDate",
+      "foreignLanguage",
+      "languageTrainingInstitution",
+      "languageCertificate",
+      "languageTrainingStartDate",
+      "languageTrainingEndDate",
+    ];
+
+    // Start with top-level simple fields
+    const payload = {
+      username: values.username ?? null,
+      password: values.password ?? null,
+      email: values.email ?? null,
+      firstName: values.firstName ?? null,
+      lastName: values.lastName ?? null,
+      phone: values.phone ?? null,
+      nationalId: values.nationalId ?? null,
+      roleId: values.roleId ?? null,
+      departmentId: values.departmentId ?? null,
+    };
+
+    // Map employmentStatusId to status name if available, else keep id or null
     try {
-      const resp = await dispatch(addStaff(values));
+      const statusName = employmentStatus?.find((s) => s.id === values.employmentStatusId)?.name;
+      payload.status = statusName ? String(statusName).toLowerCase() : null;
+    } catch (_) {
+      payload.status = null;
+    }
+
+    // Build staffResumes: include dotted keys and plain keys moved under this object
+    const staffResumes = {};
+    // move fields with prefix 'staffResumes.' first
+    Object.keys(values)
+      .filter((k) => k.startsWith("staffResumes."))
+      .forEach((k) => {
+        const subKey = k.replace("staffResumes.", "");
+        staffResumes[subKey] = values[k];
+      });
+
+    // then move defined resumeKeys from top-level values
+    resumeKeys.forEach((k) => {
+      if (k in values && !(`staffResumes.${k}` in values)) {
+        const isDateField = /Date$/i.test(k);
+        staffResumes[k] = isDateField ? fmt(values[k]) : values[k];
+      } else if (k in staffResumes) {
+        // format dates for dotted keys too
+        if (/Date$/i.test(k)) staffResumes[k] = fmt(staffResumes[k]);
+      }
+    });
+
+    // Build staffPositionSalaries
+    const staffPositionSalaries = {};
+    positionSalaryKeys.forEach((k) => {
+      if (k in values) {
+        staffPositionSalaries[k] = /Date$/i.test(k) ? fmt(values[k]) : values[k];
+      }
+    });
+
+    // Build staffEducations
+    const staffEducations = {};
+    educationKeys.forEach((k) => {
+      if (k in values) {
+        staffEducations[k] = /Date$/i.test(k) ? fmt(values[k]) : values[k];
+      }
+    });
+
+    const finalPayload = {
+      ...payload,
+      staffResumes,
+      staffPositionSalaries,
+      staffEducations,
+    };
+
+    try {
+      const resp = await dispatch(addStaff(finalPayload));
       if (resp.payload?.message === "success") {
         message.success("Thêm nhân viên thành công!");
         form.resetFields();
@@ -622,7 +807,13 @@ const AddStaff = () => {
                   label="Giấy khám sức khỏe"
                   name="healthCertificate"
                 >
-                  <Input placeholder="Có/không import file" />
+                  <Upload
+                    beforeUpload={() => false}
+                    multiple
+                    accept="application/pdf,image/*"
+                  >
+                    <Button icon={<PlusOutlined />}>Import file</Button>
+                  </Upload>
                 </Form.Item>
 
                 <Form.Item
