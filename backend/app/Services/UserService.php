@@ -11,6 +11,7 @@ use App\Models\Subscription;
 use App\Services\StaffResumeService;
 use App\Services\StaffPositionSalaryService;
 use App\Services\StaffEducationService;
+use App\Services\FileUploadService;
 use Carbon\Carbon;
 use Exception;
 use App\Models\Users;
@@ -26,15 +27,18 @@ class UserService
     protected StaffResumeService $staffResumeService;
     protected StaffPositionSalaryService $staffPositionSalaryService;
     protected StaffEducationService $staffEducationService;
+    protected FileUploadService $fileUploadService;
 
     public function __construct(
         StaffResumeService $staffResumeService,
         StaffPositionSalaryService $staffPositionSalaryService,
-        StaffEducationService $staffEducationService
+        StaffEducationService $staffEducationService,
+        FileUploadService $fileUploadService
     ) {
         $this->staffResumeService = $staffResumeService;
         $this->staffPositionSalaryService = $staffPositionSalaryService;
         $this->staffEducationService = $staffEducationService;
+        $this->fileUploadService = $fileUploadService;
     }
 
     public function UserAuthenticate($request): JsonResponse
@@ -146,8 +150,10 @@ class UserService
                 'departmentId' => $userData['departmentId'] ?? null,
                 'status' => $userData['status'] ?? 'active',
             ]);
-            // Tạo thông tin sơ yếu lý lịch nếu có
+
+            // Xử lý file upload cho staffResumes
             if (isset($userData['staffResumes']) && !empty($userData['staffResumes'])) {
+                $this->processFileUploads($userData['staffResumes'], $createUser->username);
                 $this->staffResumeService->createStaffResume($createUser->id, $userData['staffResumes']);
             }
 
@@ -156,8 +162,9 @@ class UserService
                 $this->staffPositionSalaryService->createStaffPositionSalary($createUser->id, $userData['staffPositionSalaries']);
             }
 
-            // Tạo thông tin giáo dục nếu có
+            // Xử lý file upload cho staffEducations
             if (isset($userData['staffEducations']) && !empty($userData['staffEducations'])) {
+                $this->processFileUploads($userData['staffEducations'], $createUser->username);
                 $this->staffEducationService->createStaffEducation($createUser->id, $userData['staffEducations']);
             }
 
@@ -167,6 +174,30 @@ class UserService
         } catch (Exception $error) {
             DB::rollback();
             return $this->badRequest($error);
+        }
+    }
+
+    /**
+     * Xử lý upload file cho các trường file
+     */
+    private function processFileUploads(array &$data, string $username = null): void
+    {
+        $fileFields = [
+            'healthCertificate' => 'health-certificates',
+            'resume' => 'resumes',
+            'attachedFile' => 'education-files',
+            'securityDefenseCertificate' => 'security-defense-certificates',
+            'itCertificate' => 'it-certificates',
+            'languageCertificate' => 'language-certificates'
+        ];
+
+        foreach ($fileFields as $field => $directory) {
+            if (isset($data[$field]) && $data[$field] instanceof \Illuminate\Http\UploadedFile) {
+                $filePath = $this->fileUploadService->processFileUpload($data[$field], $directory, $username);
+                if ($filePath) {
+                    $data[$field] = $filePath;
+                }
+            }
         }
     }
 
