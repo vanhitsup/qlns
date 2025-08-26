@@ -49,6 +49,34 @@ class UsersController extends Controller
     public function register(Request $request): JsonResponse
     {
         try {
+            // Convert FormData to array for validation
+            $data = $request->all();
+            
+            // Handle nested array data from FormData
+            $staffResumes = [];
+            $staffPositionSalaries = [];
+            $staffEducations = [];
+            
+            foreach ($data as $key => $value) {
+                if (strpos($key, 'staffResumes[') === 0) {
+                    $fieldName = str_replace(['staffResumes[', ']'], '', $key);
+                    $staffResumes[$fieldName] = $value;
+                } elseif (strpos($key, 'staffPositionSalaries[') === 0) {
+                    $fieldName = str_replace(['staffPositionSalaries[', ']'], '', $key);
+                    $staffPositionSalaries[$fieldName] = $value;
+                } elseif (strpos($key, 'staffEducations[') === 0) {
+                    $fieldName = str_replace(['staffEducations[', ']'], '', $key);
+                    $staffEducations[$fieldName] = $value;
+                }
+            }
+            
+            // Merge data
+            $userData = array_merge($data, [
+                'staffResumes' => $staffResumes,
+                'staffPositionSalaries' => $staffPositionSalaries,
+                'staffEducations' => $staffEducations
+            ]);
+            
             $request->validate([
                 'username' => 'required|string|unique:users,username',
                 'email' => 'nullable|email|unique:users,email',
@@ -82,8 +110,8 @@ class UsersController extends Controller
                 'staffResumes.issuePlace' => 'nullable|string',
                 'staffResumes.bankAccountNumber' => 'nullable|string',
                 'staffResumes.bankName' => 'nullable|string',
-                'staffResumes.healthCertificate' => 'nullable',
-                'staffResumes.resume' => 'nullable|string',
+                'staffResumes.healthCertificate' => 'nullable|file|mimes:jpeg,jpg,png,pdf,doc,docx|max:5120',
+                'staffResumes.resume' => 'nullable|file|mimes:jpeg,jpg,png,pdf,doc,docx|max:5120',
                 'staffResumes.height' => 'nullable|integer|min:0',
                 'staffResumes.weight' => 'nullable|integer|min:0',
                 'staffResumes.stateTitle' => 'nullable|string',
@@ -147,7 +175,7 @@ class UsersController extends Controller
                 'staffEducations.degree' => 'nullable|string',
                 'staffEducations.issuingOrganization' => 'nullable|string',
                 'staffEducations.educationLevel' => 'nullable|string',
-                'staffEducations.attachedFile' => 'nullable|string',
+                'staffEducations.attachedFile' => 'nullable|file|mimes:jpeg,jpg,png,pdf,doc,docx,xls,xlsx|max:5120',
                 'staffEducations.politicalTheory' => 'nullable|string',
                 'staffEducations.specialized' => 'nullable|string',
                 'staffEducations.trainingInstitution' => 'nullable|string',
@@ -162,22 +190,22 @@ class UsersController extends Controller
                 'staffEducations.managementTrainingEndDate' => 'nullable|date',
                 'staffEducations.securityDefenseTraining' => 'nullable|string',
                 'staffEducations.securityDefenseInstitution' => 'nullable|string',
-                'staffEducations.securityDefenseCertificate' => 'nullable|string',
+                'staffEducations.securityDefenseCertificate' => 'nullable|file|mimes:jpeg,jpg,png,pdf,doc,docx|max:5120',
                 'staffEducations.securityDefenseStartDate' => 'nullable|date',
                 'staffEducations.securityDefenseEndDate' => 'nullable|date',
                 'staffEducations.itSkills' => 'nullable|string',
                 'staffEducations.itTrainingInstitution' => 'nullable|string',
-                'staffEducations.itCertificate' => 'nullable|string',
+                'staffEducations.itCertificate' => 'nullable|file|mimes:jpeg,jpg,png,pdf,doc,docx|max:5120',
                 'staffEducations.itTrainingStartDate' => 'nullable|date',
                 'staffEducations.itTrainingEndDate' => 'nullable|date',
                 'staffEducations.foreignLanguage' => 'nullable|string',
                 'staffEducations.languageTrainingInstitution' => 'nullable|string',
-                'staffEducations.languageCertificate' => 'nullable|string',
+                'staffEducations.languageCertificate' => 'nullable|file|mimes:jpeg,jpg,png,pdf,doc,docx|max:5120',
                 'staffEducations.languageTrainingStartDate' => 'nullable|date',
                 'staffEducations.languageTrainingEndDate' => 'nullable|date',
             ]);
 
-            return $this->userService->createUser($request->all());
+            return $this->userService->createUser($userData);
         } catch (Exception $error) {
             return $this->badRequest($error->getMessage());
         }
