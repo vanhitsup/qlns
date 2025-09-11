@@ -18,16 +18,64 @@ const initialState = {
 export const addStaff = createAsyncThunk("user/addStaff", async (values) => {
   console.log(values);
   try {
-    const { data } = await axios({
-      method: "post",
-      headers: {
+    // Check if there are any file uploads (including top-level files)
+    const hasFiles = Object.values(values).some(value => {
+      // Check top-level files
+      if (value instanceof File) return true;
+      
+      // Check nested objects for files
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        return Object.values(value).some(v => v instanceof File);
+      }
+      
+      return false;
+    });
+
+    let requestData;
+    let headers;
+
+    if (hasFiles) {
+      // Use FormData for file uploads
+      const formData = new FormData();
+      
+      // Flatten nested objects and append to FormData
+      const flattenObject = (obj, prefix = '') => {
+        for (const key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            const value = obj[key];
+            const newKey = prefix ? `${prefix}[${key}]` : key;
+            
+            if (value instanceof File) {
+              formData.append(newKey, value);
+            } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+              flattenObject(value, newKey);
+            } else if (value !== null && value !== undefined) {
+              formData.append(newKey, value);
+            }
+          }
+        }
+      };
+      
+      flattenObject(values);
+      requestData = formData;
+      headers = {
+        Accept: "application/json",
+        "Content-Type": "multipart/form-data",
+      };
+    } else {
+      // Use JSON for non-file data
+      requestData = { ...values };
+      headers = {
         Accept: "application/json",
         "Content-Type": "application/json;charset=UTF-8",
-      },
+      };
+    }
+
+    const { data } = await axios({
+      method: "post",
+      headers,
       url: `user/register`,
-      data: {
-        ...values,
-      },
+      data: requestData,
     });
 
     return successHandler(data, "Staff Added successfully");

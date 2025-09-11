@@ -27,6 +27,7 @@ class Users extends Model
         'roleId',
         'departmentId',
         'status',
+        'profileImage',
     ];
 
     public function role(): BelongsTo

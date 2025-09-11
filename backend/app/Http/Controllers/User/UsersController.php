@@ -51,32 +51,8 @@ class UsersController extends Controller
         try {
             // Convert FormData to array for validation
             $data = $request->all();
-            
-            // Handle nested array data from FormData
-            $staffResumes = [];
-            $staffPositionSalaries = [];
-            $staffEducations = [];
-            
-            foreach ($data as $key => $value) {
-                if (strpos($key, 'staffResumes[') === 0) {
-                    $fieldName = str_replace(['staffResumes[', ']'], '', $key);
-                    $staffResumes[$fieldName] = $value;
-                } elseif (strpos($key, 'staffPositionSalaries[') === 0) {
-                    $fieldName = str_replace(['staffPositionSalaries[', ']'], '', $key);
-                    $staffPositionSalaries[$fieldName] = $value;
-                } elseif (strpos($key, 'staffEducations[') === 0) {
-                    $fieldName = str_replace(['staffEducations[', ']'], '', $key);
-                    $staffEducations[$fieldName] = $value;
-                }
-            }
-            
-            // Merge data
-            $userData = array_merge($data, [
-                'staffResumes' => $staffResumes,
-                'staffPositionSalaries' => $staffPositionSalaries,
-                'staffEducations' => $staffEducations
-            ]);
-            
+            logger($data);
+
             $request->validate([
                 'username' => 'required|string|unique:users,username',
                 'email' => 'nullable|email|unique:users,email',
@@ -88,6 +64,7 @@ class UsersController extends Controller
                 'roleId' => 'nullable|integer|exists:role,id',
                 'departmentId' => 'nullable|integer|exists:department,id',
                 'status' => 'nullable|string|in:active,inactive',
+                'profileImage' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
 
                 // Validation cho staffResumes
                 'staffResumes' => 'nullable',
@@ -205,7 +182,7 @@ class UsersController extends Controller
                 'staffEducations.languageTrainingEndDate' => 'nullable|date',
             ]);
 
-            return $this->userService->createUser($userData);
+            return $this->userService->createUser($data);
         } catch (Exception $error) {
             return $this->badRequest($error->getMessage());
         }

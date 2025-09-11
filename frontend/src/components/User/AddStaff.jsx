@@ -89,7 +89,7 @@ const AddStaff = () => {
         onChange={onChange}
         modules={modules}
         formats={formats}
-        style={{ height: height - 42 }} 
+        style={{ height: height - 42 }}
       />
     );
   };
@@ -99,7 +99,8 @@ const AddStaff = () => {
     setLoader(true);
 
     // helper to format DatePicker values
-    const fmt = (d) => (d && typeof d?.format === "function" ? d.format("YYYY-MM-DD") : d ?? null);
+    const fmt = (d) =>
+      d && typeof d?.format === "function" ? d.format("YYYY-MM-DD") : d ?? null;
 
     // Collect fields for nested groups
     const resumeKeys = [
@@ -130,6 +131,13 @@ const AddStaff = () => {
       "familyBackground",
       "previousOccupation",
       "joinPartyDate",
+      "partyCardNumber",
+      "joinPartyDateOficial",
+      "partyPosition",
+      "leavePartyDate",
+      "birthDateParty",
+      "partyCell",
+      "joinPartyDate2nd",
       "joinOrganizationDate",
       "joinArmyDate",
       "leaveArmyDate",
@@ -222,17 +230,28 @@ const AddStaff = () => {
       username: values.username ?? null,
       password: values.password ?? null,
       email: values.email ?? null,
-      firstName: values.firstName ?? null,
-      lastName: values.lastName ?? null,
+      fullName: values.fullName ?? null,
+      note: values.note ?? null,
       phone: values.phone ?? null,
       nationalId: values.nationalId ?? null,
       roleId: values.roleId ?? null,
       departmentId: values.departmentId ?? null,
+      profileImage:
+        values.profileImage && values.profileImage.length > 0
+          ? values.profileImage[0]?.originFileObj || values.profileImage[0]
+          : null,
+      nationalIdImage:
+        values.nationalIdImage && values.nationalIdImage.length > 0
+          ? values.nationalIdImage[0]?.originFileObj ||
+            values.nationalIdImage[0]
+          : null,
     };
 
     // Map employmentStatusId to status name if available, else keep id or null
     try {
-      const statusName = employmentStatus?.find((s) => s.id === values.employmentStatusId)?.name;
+      const statusName = employmentStatus?.find(
+        (s) => s.id === values.employmentStatusId
+      )?.name;
       payload.status = statusName ? String(statusName).toLowerCase() : null;
     } catch (_) {
       payload.status = null;
@@ -252,7 +271,16 @@ const AddStaff = () => {
     resumeKeys.forEach((k) => {
       if (k in values && !(`staffResumes.${k}` in values)) {
         const isDateField = /Date$/i.test(k);
-        staffResumes[k] = isDateField ? fmt(values[k]) : values[k];
+        const isFileField = ["healthCertificate", "resume"].includes(k);
+
+        if (isFileField && values[k] && values[k].length > 0) {
+          // Handle file upload - get the actual file from fileList
+          staffResumes[k] = values[k][0]?.originFileObj || values[k][0];
+        } else if (isDateField) {
+          staffResumes[k] = fmt(values[k]);
+        } else {
+          staffResumes[k] = values[k];
+        }
       } else if (k in staffResumes) {
         // format dates for dotted keys too
         if (/Date$/i.test(k)) staffResumes[k] = fmt(staffResumes[k]);
@@ -263,7 +291,9 @@ const AddStaff = () => {
     const staffPositionSalaries = {};
     positionSalaryKeys.forEach((k) => {
       if (k in values) {
-        staffPositionSalaries[k] = /Date$/i.test(k) ? fmt(values[k]) : values[k];
+        staffPositionSalaries[k] = /Date$/i.test(k)
+          ? fmt(values[k])
+          : values[k];
       }
     });
 
@@ -271,7 +301,22 @@ const AddStaff = () => {
     const staffEducations = {};
     educationKeys.forEach((k) => {
       if (k in values) {
-        staffEducations[k] = /Date$/i.test(k) ? fmt(values[k]) : values[k];
+        const isDateField = /Date$/i.test(k);
+        const isFileField = [
+          "attachedFile",
+          "securityDefenseCertificate",
+          "itCertificate",
+          "languageCertificate",
+        ].includes(k);
+
+        if (isFileField && values[k] && values[k].length > 0) {
+          // Handle file upload - get the actual file from fileList
+          staffEducations[k] = values[k][0]?.originFileObj || values[k][0];
+        } else if (isDateField) {
+          staffEducations[k] = fmt(values[k]);
+        } else {
+          staffEducations[k] = values[k];
+        }
       }
     });
 
@@ -427,21 +472,15 @@ const AddStaff = () => {
             <Col span={12} className="gutter-row form-color">
               <Form.Item
                 style={{ marginBottom: "10px" }}
-                label="Họ tên đệm"
-                name="firstName"
+                label="Họ và tên"
+                name="fullName"
               >
-                <Input placeholder="Nguyễn Văn" />
+                <Input placeholder="Nguyễn Văn A" />
               </Form.Item>
+
               <Form.Item
                 style={{ marginBottom: "10px" }}
-                label="Tên"
-                name="lastName"
-              >
-                <Input placeholder="A" />
-              </Form.Item>
-              <Form.Item
-                style={{ marginBottom: "10px" }}
-                label="Tên đăng nhập"
+                label="Tên đăng nhập quản trị hệ thống"
                 name="username"
               >
                 <Input placeholder="nguyenvana" />
@@ -470,7 +509,7 @@ const AddStaff = () => {
 
               <Form.Item
                 style={{ marginBottom: "10px" }}
-                label="Số điện thoại"
+                label="Số điện thoại đăng kí CCCD"
                 name="phone"
               >
                 <Input placeholder="Nhập số điện thoại" />
@@ -524,7 +563,7 @@ const AddStaff = () => {
                     ))}
                 </Select>
               </Form.Item>
-              {/* <Form.Item
+              <Form.Item
                 name="profileImage"
                 label="Ảnh chân dung"
                 valuePropName="fileList"
@@ -535,8 +574,9 @@ const AddStaff = () => {
                 <Upload
                   listType="picture-card"
                   maxCount={1}
+                  multiple
                   beforeUpload={() => false}
-                  accept="image/*"
+                  accept="application/pdf,image/*"
                 >
                   <div>
                     <PlusOutlined />
@@ -544,27 +584,35 @@ const AddStaff = () => {
                   </div>
                 </Upload>
               </Form.Item>
-          
+
               <Form.Item
-                name="otherImage"
-                label="Ảnh căn cước công dân, hộ chiếu, thẻ Đảng viên"
+                name="nationalIdImage"
+                label="Ảnh căn cước công dân 2 mặt"
                 valuePropName="fileList"
                 getValueFromEvent={normFile}
-                tooltip="Tải nhiều ảnh (jpg, png)"
+                tooltip="Tải lên 1 ảnh (jpg, png)"
                 style={{ marginBottom: "10px" }}
               >
                 <Upload
                   listType="picture-card"
+                  maxCount={1}
                   multiple
                   beforeUpload={() => false}
-                  accept="image/*"
+                  accept="application/pdf,image/*"
                 >
                   <div>
                     <PlusOutlined />
                     <div style={{ marginTop: 8 }}>Tải ảnh</div>
                   </div>
                 </Upload>
-              </Form.Item> */}
+              </Form.Item>
+              <Form.Item
+                style={{ marginBottom: "10px" }}
+                label="Ghi chú"
+                name="note"
+              >
+                <Input.TextArea placeholder="Ghi chú" rows={3} />
+              </Form.Item>
             </Col>
           </Row>
 
@@ -806,6 +854,8 @@ const AddStaff = () => {
                   style={{ marginBottom: "10px" }}
                   label="Giấy khám sức khỏe"
                   name="healthCertificate"
+                  getValueFromEvent={normFile}
+                  valuePropName="fileList"
                 >
                   <Upload
                     beforeUpload={() => false}
@@ -820,8 +870,16 @@ const AddStaff = () => {
                   style={{ marginBottom: "10px" }}
                   label="Sơ yếu lý lịch"
                   name="resume"
+                  getValueFromEvent={normFile}
+                  valuePropName="fileList"
                 >
-                  <Input placeholder="Có/không import file" />
+                  <Upload
+                    beforeUpload={() => false}
+                    multiple
+                    accept="application/pdf,image/*"
+                  >
+                    <Button icon={<PlusOutlined />}>Import file</Button>
+                  </Upload>
                 </Form.Item>
 
                 <Form.Item
@@ -863,6 +921,56 @@ const AddStaff = () => {
                   style={{ marginBottom: "10px" }}
                   label="Ngày vào Đảng CSVN"
                   name="joinPartyDate"
+                >
+                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                </Form.Item>
+                <Form.Item
+                  style={{ marginBottom: "10px" }}
+                  label="Số thẻ Đảng viên"
+                  name="partyCardNumber"
+                >
+                  <Input placeholder="123456789" />
+                </Form.Item>
+                <Form.Item
+                  style={{ marginBottom: "10px" }}
+                  label="Ngày vào Đảng CSVN (chính thức)"
+                  name="joinPartyDateOficial"
+                >
+                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                </Form.Item>
+                <Form.Item
+                  style={{ marginBottom: "10px" }}
+                  label="Chức vụ Đảng"
+                  name="partyPosition"
+                >
+                  <Input placeholder="Bí thư" />
+                </Form.Item>
+                <Form.Item
+                  style={{ marginBottom: "10px" }}
+                  label="Ngày ra khỏi Đảng"
+                  name="leavePartyDate"
+                >
+                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                </Form.Item>
+                <Form.Item
+                  style={{ marginBottom: "10px" }}
+                  label="Ngày sinh kê theo lý lịch Đảng"
+                  name="birthDateParty"
+                >
+                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                </Form.Item>
+                <Form.Item
+                  style={{ marginBottom: "10px" }}
+                  label="Chi bộ sinh hoạt Đảng"
+                  name="partyCell"
+                >
+                  <Input placeholder="Chi bộ 1" />
+                </Form.Item>
+
+                <Form.Item
+                  style={{ marginBottom: "10px" }}
+                  label="Ngày kết nạp Đảng lần 2"
+                  name="joinPartyDate2nd"
                 >
                   <DatePicker className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
@@ -1441,8 +1549,16 @@ const AddStaff = () => {
                     style={{ marginBottom: "10px" }}
                     label="Hồ sơ đính kèm ( import)"
                     name="attachedFile"
+                    getValueFromEvent={normFile}
+                    valuePropName="fileList"
                   >
-                    <Input placeholder="" style={{ width: "100%" }} />
+                    <Upload
+                      beforeUpload={() => false}
+                      multiple
+                      accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx"
+                    >
+                      <Button icon={<PlusOutlined />}>Import file</Button>
+                    </Upload>
                   </Form.Item>
                   <Form.Item
                     style={{ marginBottom: "10px" }}
@@ -1546,8 +1662,16 @@ const AddStaff = () => {
                     style={{ marginBottom: "10px" }}
                     label="Bằng/chứng chỉ được cấp"
                     name="securityDefenseCertificate"
+                    getValueFromEvent={normFile}
+                    valuePropName="fileList"
                   >
-                    <Input placeholder="" style={{ width: "100%" }} />
+                    <Upload
+                      beforeUpload={() => false}
+                      multiple
+                      accept="application/pdf,image/*"
+                    >
+                      <Button icon={<PlusOutlined />}>Import file</Button>
+                    </Upload>
                   </Form.Item>
                   <Form.Item
                     style={{ marginBottom: "10px" }}
@@ -1581,8 +1705,16 @@ const AddStaff = () => {
                     style={{ marginBottom: "10px" }}
                     label="Bằng/chứng chỉ được cấp"
                     name="itCertificate"
+                    getValueFromEvent={normFile}
+                    valuePropName="fileList"
                   >
-                    <Input placeholder="" style={{ width: "100%" }} />
+                    <Upload
+                      beforeUpload={() => false}
+                      multiple
+                      accept="application/pdf,image/*"
+                    >
+                      <Button icon={<PlusOutlined />}>Import file</Button>
+                    </Upload>
                   </Form.Item>
                   <Form.Item
                     style={{ marginBottom: "10px" }}
@@ -1616,8 +1748,16 @@ const AddStaff = () => {
                     style={{ marginBottom: "10px" }}
                     label="Bằng/chứng chỉ được cấp"
                     name="languageCertificate"
+                    getValueFromEvent={normFile}
+                    valuePropName="fileList"
                   >
-                    <Input placeholder="" style={{ width: "100%" }} />
+                    <Upload
+                      beforeUpload={() => false}
+                      multiple
+                      accept="application/pdf,image/*"
+                    >
+                      <Button icon={<PlusOutlined />}>Import file</Button>
+                    </Upload>
                   </Form.Item>
                   <Form.Item
                     style={{ marginBottom: "10px" }}

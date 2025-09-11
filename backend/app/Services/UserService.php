@@ -138,6 +138,10 @@ class UserService
                 return $this->forbidden("You can not create super admin");
             }
 
+            if (!empty($userData['profileImage'])) {
+                $this->processFileUploads($userData, $userData['username']);
+            }
+
             $createUser = Users::create([
                 'firstName' => $userData['firstName'] ?? null,
                 'lastName' => $userData['lastName'] ?? null,
@@ -149,21 +153,22 @@ class UserService
                 'nationalId' => $userData['nationalId'] ?? null,
                 'departmentId' => $userData['departmentId'] ?? null,
                 'status' => $userData['status'] ?? 'active',
+                'profileImage' => $userData['profileImage'] ?? null,
             ]);
 
             // Xử lý file upload cho staffResumes
-            if (isset($userData['staffResumes']) && !empty($userData['staffResumes'])) {
+            if (!empty($userData['staffResumes'])) {
                 $this->processFileUploads($userData['staffResumes'], $createUser->username);
                 $this->staffResumeService->createStaffResume($createUser->id, $userData['staffResumes']);
             }
 
             // Tạo thông tin chức danh và lương nếu có
-            if (isset($userData['staffPositionSalaries']) && !empty($userData['staffPositionSalaries'])) {
+            if (!empty($userData['staffPositionSalaries'])) {
                 $this->staffPositionSalaryService->createStaffPositionSalary($createUser->id, $userData['staffPositionSalaries']);
             }
 
             // Xử lý file upload cho staffEducations
-            if (isset($userData['staffEducations']) && !empty($userData['staffEducations'])) {
+            if (!empty($userData['staffEducations'])) {
                 $this->processFileUploads($userData['staffEducations'], $createUser->username);
                 $this->staffEducationService->createStaffEducation($createUser->id, $userData['staffEducations']);
             }
@@ -188,8 +193,10 @@ class UserService
             'attachedFile' => 'education-files',
             'securityDefenseCertificate' => 'security-defense-certificates',
             'itCertificate' => 'it-certificates',
-            'languageCertificate' => 'language-certificates'
+            'languageCertificate' => 'language-certificates',
+            'profileImage' => 'profile-image',
         ];
+        logger($data);
 
         foreach ($fileFields as $field => $directory) {
             if (isset($data[$field]) && $data[$field] instanceof \Illuminate\Http\UploadedFile) {
