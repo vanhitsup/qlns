@@ -17,16 +17,17 @@ class Users extends Model
     protected $primaryKey = 'id';
     protected $hidden = ['password'];
     protected $fillable = [
-        'firstName',
-        'lastName',
+        'fullName',
         'username',
         'email',
         'password',
         'nationalId',
+        'nationalIdImage',
         'phone',
         'roleId',
         'departmentId',
         'status',
+        'note',
         'profileImage',
     ];
 

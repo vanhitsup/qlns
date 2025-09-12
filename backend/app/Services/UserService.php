@@ -138,21 +138,22 @@ class UserService
                 return $this->forbidden("You can not create super admin");
             }
 
-            if (!empty($userData['profileImage'])) {
+            if (!empty($userData['profileImage']) || !empty($userData['nationalIdImage'])) {
                 $this->processFileUploads($userData, $userData['username']);
             }
 
             $createUser = Users::create([
-                'firstName' => $userData['firstName'] ?? null,
-                'lastName' => $userData['lastName'] ?? null,
+                'fullName' => $userData['fullName'] ?? null,
                 'username' => $userData['username'] ?? null,
                 'password' => $hash,
                 'roleId' => $userData['roleId'] ?? null,
                 'email' => $userData['email'] ?? null,
                 'phone' => $userData['phone'] ?? null,
                 'nationalId' => $userData['nationalId'] ?? null,
+                'nationalIdImage' => $userData['nationalIdImage'] ?? null,
                 'departmentId' => $userData['departmentId'] ?? null,
                 'status' => $userData['status'] ?? 'active',
+                'note' => $userData['note'] ?? null,
                 'profileImage' => $userData['profileImage'] ?? null,
             ]);
 
@@ -195,6 +196,7 @@ class UserService
             'itCertificate' => 'it-certificates',
             'languageCertificate' => 'language-certificates',
             'profileImage' => 'profile-image',
+            'nationalIdImage' => 'national-id',
         ];
         logger($data);
 
