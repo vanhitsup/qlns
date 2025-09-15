@@ -59,6 +59,11 @@ class StaffEducation extends Model
         'itTrainingEndDate' => 'date',
         'languageTrainingStartDate' => 'date',
         'languageTrainingEndDate' => 'date',
+        // allow multiple files
+        'attachedFile' => 'array',
+        'securityDefenseCertificate' => 'array',
+        'itCertificate' => 'array',
+        'languageCertificate' => 'array',
     ];
 
     /**
