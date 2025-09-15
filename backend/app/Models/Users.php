@@ -31,6 +31,11 @@ class Users extends Model
         'profileImage',
     ];
 
+    protected $casts = [
+        // nationalIdImage may store JSON array of file paths
+        'nationalIdImage' => 'array',
+    ];
+
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'roleId');

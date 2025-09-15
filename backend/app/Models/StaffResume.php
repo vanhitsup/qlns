@@ -86,6 +86,9 @@ class StaffResume extends Model
         'retirementDate' => 'date',
         'height' => 'integer',
         'weight' => 'integer',
+        // allow multiple files
+        'healthCertificate' => 'array',
+        'resume' => 'array',
     ];
 
     /**

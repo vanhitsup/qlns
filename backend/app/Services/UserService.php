@@ -198,13 +198,36 @@ class UserService
             'profileImage' => 'profile-image',
             'nationalIdImage' => 'national-id',
         ];
-        logger($data);
-
         foreach ($fileFields as $field => $directory) {
-            if (isset($data[$field]) && $data[$field] instanceof \Illuminate\Http\UploadedFile) {
+            if (!isset($data[$field])) {
+                continue;
+            }
+
+            // Single file: keep behavior for profileImage; also accept single for others
+            if ($data[$field] instanceof \Illuminate\Http\UploadedFile) {
                 $filePath = $this->fileUploadService->processFileUpload($data[$field], $directory, $username);
                 if ($filePath) {
-                    $data[$field] = $filePath;
+                    $data[$field] = $field === 'profileImage' ? $filePath : json_encode([$filePath]);
+                }
+                continue;
+            }
+
+            // Multiple files: array of UploadedFile
+            if (is_array($data[$field])) {
+                $paths = [];
+                foreach ($data[$field] as $maybeFile) {
+                    if ($maybeFile instanceof \Illuminate\Http\UploadedFile) {
+                        $p = $this->fileUploadService->processFileUpload($maybeFile, $directory, $username);
+                        if ($p) {
+                            $paths[] = $p;
+                        }
+                    }
+                }
+                if (!empty($paths)) {
+                    // profileImage remains single
+                    $data[$field] = $field === 'profileImage' ? $paths[0] : json_encode($paths);
+                } else {
+                    unset($data[$field]);
                 }
             }
         }
