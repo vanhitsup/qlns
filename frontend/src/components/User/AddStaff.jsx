@@ -98,9 +98,33 @@ const AddStaff = () => {
   const onFinish = async (values) => {
     setLoader(true);
 
-    // helper to format DatePicker values
-    const fmt = (d) =>
-      d && typeof d?.format === "function" ? d.format("YYYY-MM-DD") : d ?? null;
+    // helper format dayjs or native date to YYYY-MM-DD
+    const fmt = (d) => {
+      if (!d) return null;
+      if (typeof d?.format === "function") return d.format("YYYY-MM-DD");
+      // fallback if a raw Date object
+      if (d instanceof Date && !isNaN(d)) {
+        const pad = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      }
+      return d; // primitive string (assume already correct)
+    };
+
+    // Danh sách các field ngày không kết thúc đúng bằng 'Date' hoặc có hậu tố đặc biệt
+    const specialDateFields = new Set([
+      'joinPartyDate2nd',
+      'joinPartyDateOficial',
+      'birthDateParty'
+    ]);
+
+    // Hàm nhận biết key là field ngày dựa trên tên hoặc value (dayjs có format)
+    const isDateKey = (k, v) => {
+      if (/Date$/i.test(k)) return true; // các field chuẩn kết thúc bằng Date
+      if (specialDateFields.has(k)) return true;
+      // nếu value có format (dayjs) và không phải file => cũng xử lý
+      if (v && typeof v === 'object' && typeof v.format === 'function') return true;
+      return false;
+    };
 
     // Collect fields for nested groups
     const resumeKeys = [
@@ -269,21 +293,19 @@ const AddStaff = () => {
 
     // then move defined resumeKeys from top-level values
     resumeKeys.forEach((k) => {
-      if (k in values && !(`staffResumes.${k}` in values)) {
-        const isDateField = /Date$/i.test(k);
+      if (k in values && !("staffResumes." + k in values)) {
         const isFileField = ["healthCertificate", "resume"].includes(k);
-
-        if (isFileField && values[k] && values[k].length > 0) {
-          // Handle file upload - get the actual file from fileList
-          staffResumes[k] = values[k][0]?.originFileObj || values[k][0];
-        } else if (isDateField) {
-          staffResumes[k] = fmt(values[k]);
+        const val = values[k];
+        if (isFileField && val && val.length > 0) {
+          staffResumes[k] = val[0]?.originFileObj || val[0];
+        } else if (isDateKey(k, val)) {
+          staffResumes[k] = fmt(val);
         } else {
-          staffResumes[k] = values[k];
+          staffResumes[k] = val;
         }
       } else if (k in staffResumes) {
-        // format dates for dotted keys too
-        if (/Date$/i.test(k)) staffResumes[k] = fmt(staffResumes[k]);
+        const existing = staffResumes[k];
+        if (isDateKey(k, existing)) staffResumes[k] = fmt(existing);
       }
     });
 
@@ -291,9 +313,8 @@ const AddStaff = () => {
     const staffPositionSalaries = {};
     positionSalaryKeys.forEach((k) => {
       if (k in values) {
-        staffPositionSalaries[k] = /Date$/i.test(k)
-          ? fmt(values[k])
-          : values[k];
+        const val = values[k];
+        staffPositionSalaries[k] = isDateKey(k, val) ? fmt(val) : val;
       }
     });
 
@@ -301,21 +322,19 @@ const AddStaff = () => {
     const staffEducations = {};
     educationKeys.forEach((k) => {
       if (k in values) {
-        const isDateField = /Date$/i.test(k);
         const isFileField = [
           "attachedFile",
           "securityDefenseCertificate",
           "itCertificate",
           "languageCertificate",
         ].includes(k);
-
-        if (isFileField && values[k] && values[k].length > 0) {
-          // Handle file upload - get the actual file from fileList
-          staffEducations[k] = values[k][0]?.originFileObj || values[k][0];
-        } else if (isDateField) {
-          staffEducations[k] = fmt(values[k]);
+        const val = values[k];
+        if (isFileField && val && val.length > 0) {
+          staffEducations[k] = val[0]?.originFileObj || val[0];
+        } else if (isDateKey(k, val)) {
+          staffEducations[k] = fmt(val);
         } else {
-          staffEducations[k] = values[k];
+          staffEducations[k] = val;
         }
       }
     });
@@ -343,6 +362,9 @@ const AddStaff = () => {
   };
 
   const onFinishFailed = () => {};
+
+  // Định dạng hiển thị trên UI (dd-mm-yy). Dữ liệu gửi backend vẫn YYYY-MM-DD qua hàm fmt.
+  const DATE_DISPLAY_FORMAT = "DD-MM-YYYY";
 
   const bloodGroups = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
 
@@ -490,7 +512,7 @@ const AddStaff = () => {
                 label="Mật khẩu"
                 name="password"
               >
-                <Input placeholder="*******" />
+                <Input type="password" placeholder="*******" />
               </Form.Item>
               <Form.Item
                 style={{ marginBottom: "10px" }}
@@ -679,7 +701,7 @@ const AddStaff = () => {
                   label="Ngày sinh"
                   name="birthDate"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item style={{ marginBottom: "10px" }} label="Nơi sinh">
                   <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
@@ -827,7 +849,7 @@ const AddStaff = () => {
                   label="Ngày cấp"
                   name="issueDate"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "10px" }}
@@ -922,7 +944,7 @@ const AddStaff = () => {
                   label="Ngày vào Đảng CSVN"
                   name="joinPartyDate"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "10px" }}
@@ -936,7 +958,7 @@ const AddStaff = () => {
                   label="Ngày vào Đảng CSVN (chính thức)"
                   name="joinPartyDateOficial"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "10px" }}
@@ -950,14 +972,14 @@ const AddStaff = () => {
                   label="Ngày ra khỏi Đảng"
                   name="leavePartyDate"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "10px" }}
                   label="Ngày sinh kê theo lý lịch Đảng"
                   name="birthDateParty"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "10px" }}
@@ -972,28 +994,28 @@ const AddStaff = () => {
                   label="Ngày kết nạp Đảng lần 2"
                   name="joinPartyDate2nd"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "10px" }}
                   label="Ngày tham gia tổ chức CT-XH"
                   name="joinOrganizationDate"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "10px" }}
                   label="Ngày nhập ngũ(nếu có)"
                   name="joinArmyDate"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "10px" }}
                   label="Ngày xuất ngũ(nếu có)"
                   name="leaveArmyDate"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "10px" }}
@@ -1042,14 +1064,14 @@ const AddStaff = () => {
                   label="Ngày được tuyển dụng lần đầu"
                   name="firstRecruitmentDate"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "10px" }}
                   label="Ngày vào cơ quan hiện đang công tác"
                   name="currentAgencyJoinDate"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "50px" }}
@@ -1084,14 +1106,14 @@ const AddStaff = () => {
                   label="Ngày nghỉ phép"
                   name="leaveDate"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "10px" }}
                   label="Ngày kết thúc làm việc cơ quan (nghỉ hưu)"
                   name="retirementDate"
                 >
-                  <DatePicker className="date-picker hr-staffs-date-picker" />
+                  <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                 </Form.Item>
                 <Form.Item
                   style={{ marginBottom: "10px" }}
@@ -1121,7 +1143,7 @@ const AddStaff = () => {
                     ))}
                   </Select>
                 </Form.Item>
-                <Form.Item
+                {/* <Form.Item
                   name={"employmentStatusId"}
                   style={{ marginBottom: "10px" }}
                   label={
@@ -1148,7 +1170,7 @@ const AddStaff = () => {
                         </Option>
                       ))}
                   </Select>
-                </Form.Item>
+                </Form.Item> */}
                 <Form.Item
                   name={"departmentId"}
                   style={{ marginBottom: "10px" }}
@@ -1294,14 +1316,14 @@ const AddStaff = () => {
                     label="Ngày được bổ nhiệm/ngày phê chuẩn"
                     name="appointmentStartDate"
                   >
-                    <DatePicker className="date-picker hr-staffs-date-picker" />
+                    <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                   </Form.Item>
                   <Form.Item
                     style={{ marginBottom: "10px" }}
                     label="Thời hạn bổ nhiệm"
                     name="appointmentEndDate"
                   >
-                    <DatePicker className="date-picker hr-staffs-date-picker" />
+                    <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                   </Form.Item>
 
                   <Form.Item
@@ -1309,7 +1331,7 @@ const AddStaff = () => {
                     label="Ngày được bổ nhiệm lại/phê chuẩn nhiệm kỳ tiếp theo"
                     name="reappointmentDate"
                   >
-                    <DatePicker className="date-picker hr-staffs-date-picker" />
+                    <DatePicker format={DATE_DISPLAY_FORMAT} className="date-picker hr-staffs-date-picker" />
                   </Form.Item>
                   <Form.Item
                     style={{ marginBottom: "10px" }}

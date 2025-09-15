@@ -136,11 +136,11 @@ export default function GetAllStaff() {
       className="max-md:border-0 max-md:bg-white"
       bodyClass="max-md:p-0 "
       headClass="border-none"
-      title={"Staff List"}
+      title={"Danh sách nhân viên"}
       extra={
         <CreateDrawer
           permission={"create-user"}
-          title={"Create Staff"}
+          title={"Thêm mới nhân viên"}
           width={85}>
           <AddStaff />
         </CreateDrawer>
@@ -152,7 +152,7 @@ export default function GetAllStaff() {
           total={total}
           loading={loading}
           setPageConfig={setPageConfig}
-          title={"Staff List"}
+          title={"Danh sách nhân viên"}
           filters={filters}
         />
       </UserPrivateComponent>
