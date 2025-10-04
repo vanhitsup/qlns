@@ -23,20 +23,23 @@ export default function GetAllStaff() {
   const [pageConfig, setPageConfig] = useState({
     page: 1,
     count: 10,
-    status: "true",
+    status: "active",
   });
+  const listWithSTT = list?.map((item, index) => ({
+    ...item,
+    stt: (pageConfig.page - 1) * pageConfig.count + index + 1,
+  }));
   const columns = [
     {
       id: 1,
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      render: (id) => <Link to={`/admin/staff/${id}`}>{id}</Link>,
-      renderCsv: (id) => id,
+      title: "STT",
+      dataIndex: "stt", 
+      key: "stt",
+      width: 60,
     },
     {
       id: 2,
-      title: "Username",
+      title: "Tên đăng nhập hệ thống",
       dataIndex: "username",
       key: "username",
       render: (username, { id }) => (
@@ -45,16 +48,14 @@ export default function GetAllStaff() {
     },
     {
       id: 3,
-      title: "Name",
-      key: "email",
-      render: ({ firstName, lastName }) =>
-        `${firstName || ""} ${lastName || ""}`,
-      renderCsv: ({ firstName, lastName }) =>
-        `${firstName || ""} ${lastName || ""}`,
+      title: "Họ và tên",
+      key: "fullName",
+      render: ({ fullName }) => `${fullName || ""}`,
+      renderCsv: ({ fullName }) => `${fullName || ""}`,
     },
     {
       id: 3,
-      title: "Role",
+      title: "Chức vụ",
       dataIndex: "role",
       key: "role",
       render: ({ name }) => name,
@@ -62,7 +63,7 @@ export default function GetAllStaff() {
     },
     {
       id: 4,
-      title: "Created at",
+      title: "Ngày tạo",
       dataIndex: "createdAt",
       key: "addrcreatedAtess",
       render: (createdAt) => moment(createdAt).format("YYYY-MM-DD"),
@@ -70,11 +71,11 @@ export default function GetAllStaff() {
     },
     {
       id: 5,
-      title: "",
+      title: "Hành động",
       key: "action",
       render: ({ id, status }) => [
         {
-          label: <ViewBtn title={"View"} path={`/admin/staff/${id}`} />,
+          label: <ViewBtn title={"Xem chi tiết"} path={`/admin/staff/${id}`} />,
           key: "view",
         },
         {
@@ -84,12 +85,14 @@ export default function GetAllStaff() {
                 id,
                 status,
               }}
-              title={status === "true" ? "Hide" : "Show"}
+              title={status === "active" ? "Ẩn nhân viên" : "Xem chi tiết"}
               permission={"delete-user"}
               deleteThunk={deleteStaff}
               loadThunk={loadAllStaff}
               query={pageConfig}
               className="bg-white text-black"
+              activeValue="active"
+              inactiveValue="inactive"
             />
           ),
           key: "delete",
@@ -116,8 +119,8 @@ export default function GetAllStaff() {
       type: "select",
       mode: "single",
       options: [
-        { label: "Show", value: "true" },
-        { label: "Hide", value: "false" },
+        { label: "Xem chi tiết", value: "active" },
+        { label: "Ẩn nhân viên", value: "inactive" },
       ],
       className: "min-w-[85px] max-w-[150px]",
       popupClassName: "w-[200px]",
@@ -141,14 +144,16 @@ export default function GetAllStaff() {
         <CreateDrawer
           permission={"create-user"}
           title={"Thêm mới nhân viên"}
-          width={85}>
+          width={85}
+        >
           <AddStaff />
         </CreateDrawer>
-      }>
+      }
+    >
       <UserPrivateComponent permission={"readAll-user"}>
         <TableComponent
           columns={columns}
-          list={list}
+          list={listWithSTT}
           total={total}
           loading={loading}
           setPageConfig={setPageConfig}

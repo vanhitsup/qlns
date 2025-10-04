@@ -11,7 +11,7 @@ function Loader({ className }) {
     >
       <div className=" flex flex-col justify-center">
         <Spin size="large" />
-        <h5 className="pt-2"> Loading Please Wait ...</h5>
+        <h5 className="pt-2"> Đang tải dữ liệu ...</h5>
       </div>
     </div>
   );

@@ -126,7 +126,6 @@ const AddStaff = () => {
       return false;
     };
 
-    // Collect fields for nested groups
     const resumeKeys = [
       "fullNameBirth",
       "gender",
@@ -264,11 +263,11 @@ const AddStaff = () => {
         values.profileImage && values.profileImage.length > 0
           ? values.profileImage[0]?.originFileObj || values.profileImage[0]
           : null,
+      // Backend expects array for nationalIdImage
       nationalIdImage:
         values.nationalIdImage && values.nationalIdImage.length > 0
-          ? values.nationalIdImage[0]?.originFileObj ||
-            values.nationalIdImage[0]
-          : null,
+          ? values.nationalIdImage.map((f) => f?.originFileObj || f)
+          : undefined,
     };
 
     // Map employmentStatusId to status name if available, else keep id or null
@@ -296,8 +295,9 @@ const AddStaff = () => {
       if (k in values && !("staffResumes." + k in values)) {
         const isFileField = ["healthCertificate", "resume"].includes(k);
         const val = values[k];
-        if (isFileField && val && val.length > 0) {
-          staffResumes[k] = val[0]?.originFileObj || val[0];
+        if (isFileField && Array.isArray(val) && val.length > 0) {
+          // send as array of files as backend expects array
+          staffResumes[k] = val.map((f) => f?.originFileObj || f);
         } else if (isDateKey(k, val)) {
           staffResumes[k] = fmt(val);
         } else {
@@ -329,8 +329,9 @@ const AddStaff = () => {
           "languageCertificate",
         ].includes(k);
         const val = values[k];
-        if (isFileField && val && val.length > 0) {
-          staffEducations[k] = val[0]?.originFileObj || val[0];
+        if (isFileField && Array.isArray(val) && val.length > 0) {
+          // send as array of files
+          staffEducations[k] = val.map((f) => f?.originFileObj || f);
         } else if (isDateKey(k, val)) {
           staffEducations[k] = fmt(val);
         } else {

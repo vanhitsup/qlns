@@ -391,3 +391,109 @@ code {
     opacity: 1;
   }
 }
+
+/* Custom Modal Styles */
+.custom-confirm-modal .ant-modal-content {
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.custom-confirm-modal .ant-modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: none;
+  padding: 20px 24px 16px;
+}
+
+.custom-confirm-modal .ant-modal-title {
+  color: white !important;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.custom-confirm-modal .ant-modal-body {
+  padding: 24px;
+  background: #fafafa;
+}
+
+.custom-confirm-modal .ant-modal-footer {
+  background: #f8f9fa;
+  border-top: 1px solid #e5e7eb;
+  padding: 16px 24px;
+  border-radius: 0 0 12px 12px;
+}
+
+.custom-confirm-modal .ant-btn {
+  border-radius: 8px;
+  font-weight: 500;
+  height: 40px;
+  padding: 0 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.custom-confirm-modal .ant-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.custom-confirm-modal .ant-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.custom-confirm-modal .ant-btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+.custom-confirm-modal .ant-btn-dangerous {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  border: none;
+}
+
+.custom-confirm-modal .ant-btn-dangerous:hover {
+  background: linear-gradient(135deg, #ff5252 0%, #e53935 100%);
+}
+
+.custom-confirm-modal .ant-btn-default {
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #6b7280;
+}
+
+.custom-confirm-modal .ant-btn-default:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+/* Animation for modal appearance */
+.custom-confirm-modal .ant-modal {
+  animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalSlideIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Icon animation */
+.custom-confirm-modal .anticon {
+  animation: iconPulse 2s infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}

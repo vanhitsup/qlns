@@ -22,7 +22,7 @@ export default function queryGenerator(arg, isDefault = true, remove) {
     return query;
   }
   if (!query.includes("status")) {
-    query = "status=true&" + query;
+  query = "status=active&" + query;
   }
   if (!query.includes("page")) {
     query = "page=1&" + query;

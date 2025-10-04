@@ -51,7 +51,7 @@ class Users extends Model
      */
     public function staffResume(): HasOne
     {
-        return $this->hasOne(StaffResume::class);
+        return $this->hasOne(StaffResume::class, 'userId');
     }
 
     /**
@@ -59,7 +59,7 @@ class Users extends Model
      */
     public function staffPositionSalary(): HasOne
     {
-        return $this->hasOne(StaffPositionSalary::class);
+        return $this->hasOne(StaffPositionSalary::class, 'userId');
     }
 
     /**
@@ -67,6 +67,6 @@ class Users extends Model
      */
     public function staffEducation(): HasOne
     {
-        return $this->hasOne(StaffEducation::class);
+        return $this->hasOne(StaffEducation::class, 'userId');
     }
 }

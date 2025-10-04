@@ -16,7 +16,7 @@ class HrmDashboardController extends Controller
     {
         try {
             // Total user count
-            $userCount = Users::where('status', 'true')->count();
+            $userCount = Users::where('status', 'active')->count();
 
             // Calculate total salary
             $userSalary = SalaryHistory::orderBy('id', 'desc')->get();

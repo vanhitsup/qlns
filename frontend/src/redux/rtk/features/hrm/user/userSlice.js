@@ -18,18 +18,16 @@ const initialState = {
 export const addStaff = createAsyncThunk("user/addStaff", async (values) => {
   console.log(values);
   try {
-    // Check if there are any file uploads (including top-level files)
-    const hasFiles = Object.values(values).some(value => {
-      // Check top-level files
-      if (value instanceof File) return true;
-      
-      // Check nested objects for files
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
-        return Object.values(value).some(v => v instanceof File);
-      }
-      
+    // Check if there are any file uploads (including arrays and nested objects)
+    const containsFile = (val) => {
+      if (!val) return false;
+      if (val instanceof File || (typeof File !== 'undefined' && val instanceof Blob)) return true;
+      if (Array.isArray(val)) return val.some(containsFile);
+      if (typeof val === 'object') return Object.values(val).some(containsFile);
       return false;
-    });
+    };
+
+    const hasFiles = containsFile(values);
 
     let requestData;
     let headers;
@@ -38,22 +36,33 @@ export const addStaff = createAsyncThunk("user/addStaff", async (values) => {
       // Use FormData for file uploads
       const formData = new FormData();
       
-      // Flatten nested objects and append to FormData
+      // Flatten nested objects and arrays and append to FormData using PHP-style keys
       const flattenObject = (obj, prefix = '') => {
-        for (const key in obj) {
-          if (obj.hasOwnProperty(key)) {
-            const value = obj[key];
-            const newKey = prefix ? `${prefix}[${key}]` : key;
-            
-            if (value instanceof File) {
-              formData.append(newKey, value);
-            } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-              flattenObject(value, newKey);
-            } else if (value !== null && value !== undefined) {
-              formData.append(newKey, value);
-            }
+        Object.keys(obj || {}).forEach((key) => {
+          const value = obj[key];
+          const newKey = prefix ? `${prefix}[${key}]` : key;
+
+          if (value === undefined || value === null) return;
+
+          if (value instanceof File || (typeof File !== 'undefined' && value instanceof Blob)) {
+            formData.append(newKey, value);
+          } else if (Array.isArray(value)) {
+            value.forEach((v) => {
+              if (v instanceof File || (typeof File !== 'undefined' && v instanceof Blob)) {
+                formData.append(`${newKey}[]`, v);
+              } else if (typeof v === 'object' && v !== null) {
+                // For array of objects
+                flattenObject(v, `${newKey}[]`);
+              } else {
+                formData.append(`${newKey}[]`, v);
+              }
+            });
+          } else if (typeof value === 'object') {
+            flattenObject(value, newKey);
+          } else {
+            formData.append(newKey, value);
           }
-        }
+        });
       };
       
       flattenObject(values);
@@ -88,14 +97,69 @@ export const updateStaff = createAsyncThunk(
   "user/updateStaff",
   async ({ id, values }) => {
     try {
-      const { data } = await axios({
-        method: "put",
-        headers: {
+      // Detect if payload contains any File/Blob to switch to multipart
+      const containsFile = (val) => {
+        if (!val) return false;
+        if (typeof File !== 'undefined' && (val instanceof File || val instanceof Blob)) return true;
+        if (Array.isArray(val)) return val.some(containsFile);
+        if (typeof val === 'object') return Object.values(val).some(containsFile);
+        return false;
+      };
+
+      const hasFiles = containsFile(values);
+
+      let requestData;
+      let headers;
+
+      if (hasFiles) {
+        const formData = new FormData();
+
+        const flattenObject = (obj, prefix = '') => {
+          Object.keys(obj || {}).forEach((key) => {
+            const value = obj[key];
+            const newKey = prefix ? `${prefix}[${key}]` : key;
+
+            if (value === undefined || value === null) return;
+
+            if (typeof File !== 'undefined' && (value instanceof File || value instanceof Blob)) {
+              formData.append(newKey, value);
+            } else if (Array.isArray(value)) {
+              value.forEach((v) => {
+                if (typeof File !== 'undefined' && (v instanceof File || v instanceof Blob)) {
+                  formData.append(`${newKey}[]`, v);
+                } else if (typeof v === 'object' && v !== null) {
+                  flattenObject(v, `${newKey}[]`);
+                } else {
+                  formData.append(`${newKey}[]`, v);
+                }
+              });
+            } else if (typeof value === 'object') {
+              flattenObject(value, newKey);
+            } else {
+              formData.append(newKey, value);
+            }
+          });
+        };
+
+        flattenObject(values);
+        requestData = formData;
+        headers = {
+          Accept: "application/json",
+          "Content-Type": "multipart/form-data",
+        };
+      } else {
+        requestData = { ...values };
+        headers = {
           Accept: "application/json",
           "Content-Type": "application/json;charset=UTF-8",
-        },
+        };
+      }
+
+      const { data } = await axios({
+        method: "put",
+        headers,
         url: `user/${id}`,
-        data: values,
+        data: requestData,
       });
 
       return successHandler(data, "Staff updated successfully");
@@ -108,6 +172,12 @@ export const deleteStaff = createAsyncThunk(
   "user/deleteStaff",
   async ({ id, status }) => {
     try {
+      // Normalize boolean-like to backend values if needed
+      const mapStatus = (s) => {
+        if (s === 'true') return 'inactive';
+        if (s === 'false') return 'active';
+        return s;
+      };
       const { data } = await axios({
         method: "patch",
         headers: {
@@ -116,7 +186,7 @@ export const deleteStaff = createAsyncThunk(
         },
         url: `user/${id}`,
         data: {
-          status: status ? status : "false",
+          status: status ? mapStatus(status) : "inactive",
         },
       });
 
@@ -140,7 +210,7 @@ export const loadSingleStaff = createAsyncThunk(
         message: "success",
       };
     } catch (error) {
-      errorHandler(error, false);
+      return errorHandler(error, false);
     }
   }
 );

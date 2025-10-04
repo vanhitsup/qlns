@@ -77,7 +77,7 @@ const SideNav = ({ collapsed, setCollapsed }) => {
         {
           label: (
             <NavLink to="/admin/staff">
-              <span>Employee List</span>
+              <span>Danh sách nhân viên</span>
             </NavLink>
           ),
           permit: {

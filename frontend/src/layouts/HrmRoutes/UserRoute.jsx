@@ -1,5 +1,6 @@
 import Loader from "@/components/Loader/Loader";
 import AddStaff from "@/components/User/AddStaff";
+import UpdateStaff from "@/components/User/UpdateStaff";
 import { Suspense, lazy } from "react";
 import { Route } from "react-router-dom";
 const PermissionChecker = lazy(() =>
@@ -7,7 +8,6 @@ const PermissionChecker = lazy(() =>
 );
 const GetAllStaff = lazy(() => import("@/components/User/GetAllStaff"));
 const DetailStaff = lazy(() => import("@/components/User/DetailsStaff"));
-const UpdateStaff = lazy(() => import("@/components/User/UpdateStaff"));
 
 const UserRoutes = [
   <Route
@@ -48,6 +48,7 @@ const UserRoutes = [
   />,
   <Route
     path="staff/:id/update"
+    exact
     element={
       <Suspense fallback={<Loader />}>
         <PermissionChecker permission={"update-user"}>

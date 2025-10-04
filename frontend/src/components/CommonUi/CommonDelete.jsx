@@ -1,8 +1,9 @@
 import { cn } from "@/utils/functions";
-import { DeleteOutlined } from "@ant-design/icons";
+import { DeleteOutlined, ExclamationCircleOutlined, EyeOutlined, EyeInvisibleOutlined } from "@ant-design/icons";
 import { BiShow } from "react-icons/bi";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { Modal, Button } from "antd";
 import UserPrivateComponent from "../PrivacyComponent/UserPrivateComponent";
 
 export default function CommonDelete({
@@ -18,40 +19,41 @@ export default function CommonDelete({
   onSuccess,
   button,
   confirmMessage,
+  activeValue = 'true',
+  inactiveValue = 'false',
 }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const onDelete = async () => {
-    var result = window.confirm(
-      confirmMessage
-        ? confirmMessage
-        : `Are you sure you want to ${
-            values?.status
-              ? values?.status === "true"
-                ? "hide"
-                : "show"
-              : "delete"
-          }?`
-    );
-    if (result) {
-      const res = await dispatch(
-        deleteThunk(
-          id
-            ? id
-            : {
-                ...values,
-                status: values?.status === "true" ? "false" : "true",
-              }
-        )
-      );
-      if (res.payload?.message === "success") {
-        loadThunk && dispatch(loadThunk(query && query));
-        onSuccess && onSuccess();
-      } else if (res.data && !res.error) {
-        navigatePath && navigate(navigatePath);
-        onSuccess && onSuccess();
-      }
-    }
+    const isActive = values?.status === activeValue;
+    const actionText = values?.status ? (isActive ? 'ẩn' : 'hiện') : 'xóa';
+    
+    Modal.confirm({
+      title: 'Xác nhận',
+      content: confirmMessage || `Bạn có chắc chắn muốn ${actionText} không?`,
+      okText: 'Xác nhận',
+      cancelText: 'Hủy',
+      okType: values?.status ? (isActive ? 'danger' : 'primary') : 'danger',
+      onOk: async () => {
+        const res = await dispatch(
+          deleteThunk(
+            id
+              ? id
+              : {
+                  ...values,
+                  status: isActive ? inactiveValue : activeValue,
+                }
+          )
+        );
+        if (res.payload?.message === "success") {
+          loadThunk && dispatch(loadThunk(query && query));
+          onSuccess && onSuccess();
+        } else if (res.data && !res.error) {
+          navigatePath && navigate(navigatePath);
+          onSuccess && onSuccess();
+        }
+      },
+    });
   };
   return (
     <>
